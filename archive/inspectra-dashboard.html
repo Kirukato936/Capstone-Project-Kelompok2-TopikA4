@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspectra — Smart QC Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-50: #EFF6FF;
+    --blue-100: #DBEAFE;
+    --blue-200: #BFDBFE;
+    --blue-400: #60A5FA;
+    --blue-500: #3B82F6;
+    --blue-600: #2563EB;
+    --blue-700: #1D4ED8;
+    --blue-800: #1E40AF;
+    --blue-900: #1E3A8A;
+    --blue-950: #172554;
+    --slate-50: #F8FAFC;
+    --slate-100: #F1F5F9;
+    --slate-200: #E2E8F0;
+    --slate-300: #CBD5E1;
+    --slate-400: #94A3B8;
+    --slate-500: #64748B;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1E293B;
+    --slate-900: #0F172A;
+    --green-50: #F0FDF4;
+    --green-100: #DCFCE7;
+    --green-500: #22C55E;
+    --green-600: #16A34A;
+    --green-700: #15803D;
+    --red-50: #FFF1F2;
+    --red-100: #FFE4E6;
+    --red-500: #EF4444;
+    --red-600: #DC2626;
+    --amber-50: #FFFBEB;
+    --amber-100: #FEF3C7;
+    --amber-500: #F59E0B;
+    --amber-600: #D97706;
+    --sidebar-w: 220px;
+    --topbar-h: 64px;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-md: 0 4px 16px rgba(30,64,175,.08);
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--slate-50);
+    color: var(--slate-800);
+    display: flex;
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--blue-950);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--blue-500);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 20px; height: 20px; fill: #fff; }
+  .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+  .logo-sub { font-size: 10px; color: var(--blue-300, #93c5fd); letter-spacing: .5px; font-weight: 500; }
+
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    color: rgba(255,255,255,.3);
+    padding: 0 8px 8px;
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    color: rgba(255,255,255,.55);
+    cursor: pointer;
+    font-size: 13.5px; font-weight: 500;
+    margin-bottom: 2px;
+    transition: all .15s;
+    user-select: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .nav-item.active { background: var(--blue-600); color: #fff; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .sidebar-bottom {
+    padding: 16px 12px;
+    border-top: 1px solid rgba(255,255,255,.07);
+  }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--blue-600);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 600; color: #fff; }
+  .user-role { font-size: 11px; color: rgba(255,255,255,.4); }
+
+  /* ── Main ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .topbar {
+    height: var(--topbar-h);
+    background: #fff;
+    border-bottom: 1px solid var(--slate-200);
+    display: flex; align-items: center;
+    padding: 0 28px;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-size: 18px; font-weight: 700; color: var(--slate-900); flex: 1; }
+  .topbar-sub { font-size: 12px; color: var(--slate-400); font-weight: 400; margin-left: 8px; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: none; transition: all .15s;
+  }
+  .btn-primary { background: var(--blue-600); color: #fff; }
+  .btn-primary:hover { background: var(--blue-700); }
+  .btn-outline {
+    background: #fff; color: var(--slate-600);
+    border: 1px solid var(--slate-200);
+  }
+  .btn-outline:hover { background: var(--slate-50); border-color: var(--slate-300); }
+  .btn svg { width: 14px; height: 14px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    background: #fff; border: 1px solid var(--slate-200);
+    cursor: pointer; color: var(--slate-500);
+    transition: all .15s;
+  }
+  .icon-btn:hover { background: var(--slate-50); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  /* ── Pages ── */
+  .page { display: none; padding: 28px; }
+  .page.active { display: block; }
+
+  /* ── Cards ── */
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--slate-200);
+    box-shadow: var(--shadow);
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--slate-100);
+  }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--slate-800); }
+  .card-sub { font-size: 12px; color: var(--slate-400); font-weight: 400; margin-top: 1px; }
+  .card-body { padding: 20px; }
+
+  /* ── KPI Cards ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--slate-200);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--accent, var(--blue-500));
+  }
+  .kpi-icon {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: var(--icon-bg, var(--blue-50));
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .kpi-icon svg { width: 18px; height: 18px; color: var(--accent, var(--blue-600)); }
+  .kpi-label { font-size: 12px; color: var(--slate-500); font-weight: 500; margin-bottom: 4px; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: var(--slate-900); letter-spacing: -.5px; font-family: 'DM Mono', monospace; }
+  .kpi-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11px; font-weight: 600;
+    padding: 2px 7px; border-radius: 20px; margin-top: 6px;
+  }
+  .badge-up { background: var(--green-100); color: var(--green-700); }
+  .badge-down { background: var(--red-100); color: var(--red-600); }
+  .badge-neutral { background: var(--blue-50); color: var(--blue-700); }
+
+  /* ── Grid layouts ── */
+  .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grid-2-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+
+  /* ── Live Feed ── */
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; color: var(--green-600);
+    background: var(--green-50); padding: 3px 9px; border-radius: 20px;
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-500); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .feed-list { display: flex; flex-direction: column; gap: 0; }
+  .feed-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--slate-100);
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-status {
+    width: 8px; height: 8px;
+    border-radius: 50%; flex-shrink: 0;
+  }
+  .feed-status.ok { background: var(--green-500); }
+  .feed-status.ng { background: var(--red-500); }
+  .feed-info { flex: 1; min-width: 0; }
+  .feed-part { font-size: 13px; font-weight: 600; color: var(--slate-800); }
+  .feed-meta { font-size: 11px; color: var(--slate-400); }
+  .status-pill {
+    font-size: 11px; font-weight: 700;
+    padding: 3px 9px; border-radius: 20px; letter-spacing: .3px;
+    flex-shrink: 0;
+  }
+  .pill-ok { background: var(--green-100); color: var(--green-700); }
+  .pill-ng { background: var(--red-100); color: var(--red-600); }
+  .pill-pending { background: var(--amber-100); color: var(--amber-600); }
+
+  /* ── Table ── */
+  .table-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--slate-100);
+    flex-wrap: wrap;
+  }
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--slate-50); border: 1px solid var(--slate-200);
+    border-radius: var(--radius-sm); padding: 7px 12px; flex: 1; min-width: 200px;
+  }
+  .search-box svg { width: 14px; height: 14px; color: var(--slate-400); flex-shrink: 0; }
+  .search-box input {
+    background: none; border: none; outline: none;
+    font-size: 13px; color: var(--slate-700); width: 100%;
+    font-family: inherit;
+  }
+  .filter-select {
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--slate-200); background: var(--slate-50);
+    font-size: 13px; color: var(--slate-600); font-family: inherit;
+    cursor: pointer; outline: none;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 700; letter-spacing: .5px;
+    color: var(--slate-400); text-transform: uppercase;
+    padding: 10px 16px; text-align: left;
+    background: var(--slate-50);
+    border-bottom: 1px solid var(--slate-200);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--slate-100);
+    cursor: pointer; transition: background .1s;
+  }
+  tbody tr:hover { background: var(--blue-50); }
+  tbody td {
+    padding: 12px 16px; font-size: 13px; color: var(--slate-700);
+  }
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--slate-600); }
+  .table-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid var(--slate-100);
+    font-size: 12px; color: var(--slate-400);
+  }
+  .pagination { display: flex; gap: 4px; }
+  .page-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; cursor: pointer; border: none;
+    background: #fff; border: 1px solid var(--slate-200); color: var(--slate-600);
+    transition: all .15s;
+  }
+  .page-btn.active { background: var(--blue-600); color: #fff; border-color: var(--blue-600); }
+  .page-btn:hover:not(.active) { background: var(--slate-50); }
+
+  /* ── Detail Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(15,23,42,.4); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 16px;
+    width: 580px; max-height: 85vh;
+    overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    animation: slideUp .2s ease;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--slate-100);
+  }
+  .modal-body { padding: 20px 24px; }
+  .modal-close {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border: 1px solid var(--slate-200);
+    color: var(--slate-500); background: #fff; font-size: 16px;
+    transition: all .15s;
+  }
+  .modal-close:hover { background: var(--slate-50); }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .detail-item { background: var(--slate-50); border-radius: var(--radius-sm); padding: 12px; }
+  .detail-label { font-size: 11px; color: var(--slate-400); font-weight: 600; letter-spacing: .3px; margin-bottom: 3px; }
+  .detail-value { font-size: 14px; font-weight: 700; color: var(--slate-800); }
+  .sensor-bar {
+    background: var(--slate-50); border-radius: var(--radius-sm); padding: 14px;
+    margin-bottom: 10px;
+  }
+  .sensor-title { font-size: 12px; font-weight: 700; color: var(--slate-600); margin-bottom: 8px; }
+  .sensor-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .sensor-label { font-size: 12px; color: var(--slate-500); }
+  .sensor-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; color: var(--slate-800); }
+  .progress-wrap { height: 6px; background: var(--slate-200); border-radius: 3px; margin-top: 8px; }
+  .progress-fill { height: 100%; border-radius: 3px; background: var(--blue-500); transition: width .3s; }
+  .progress-fill.ok { background: var(--green-500); }
+  .progress-fill.ng { background: var(--red-500); }
+
+  /* ── Vendor / Report ── */
+  .vendor-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--slate-100);
+  }
+  .vendor-row:last-child { border-bottom: none; }
+  .vendor-rank { font-size: 11px; font-weight: 700; color: var(--slate-400); width: 20px; }
+  .vendor-info { flex: 1; }
+  .vendor-name { font-size: 13px; font-weight: 700; color: var(--slate-800); }
+  .vendor-meta { font-size: 11px; color: var(--slate-400); }
+  .vendor-bar-wrap { width: 120px; }
+  .vendor-bar { height: 6px; border-radius: 3px; background: var(--slate-200); }
+  .vendor-bar-fill { height: 100%; border-radius: 3px; }
+  .vendor-rate { font-size: 13px; font-weight: 700; font-family: 'DM Mono', monospace; text-align: right; min-width: 42px; }
+
+  /* RPP Form */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--slate-600); margin-bottom: 5px; display: block; }
+  .form-input {
+    width: 100%; padding: 9px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--slate-200); background: var(--slate-50);
+    font-size: 13px; color: var(--slate-700); font-family: inherit; outline: none;
+    transition: border .15s;
+  }
+  .form-input:focus { border-color: var(--blue-400); background: #fff; }
+  .rpp-table { width: 100%; }
+  .rpp-status {
+    font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+  }
+  .rpp-open { background: var(--amber-100); color: var(--amber-600); }
+  .rpp-confirmed { background: var(--blue-100); color: var(--blue-700); }
+  .rpp-closed { background: var(--green-100); color: var(--green-700); }
+
+
+
+  /* ── Alert bar ── */
+  .alert-bar {
+    background: var(--red-50); border: 1px solid #fecdd3;
+    border-radius: var(--radius-sm); padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px; font-size: 13px; color: var(--red-600);
+  }
+  .alert-bar svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ── Donut ── */
+  .donut-wrap { position: relative; width: 130px; height: 130px; margin: 0 auto; }
+  .donut-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .donut-pct { font-size: 22px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--slate-900); }
+  .donut-label { font-size: 10px; color: var(--slate-400); font-weight: 600; }
+
+  /* empty state */
+  .empty { text-align: center; padding: 40px 20px; color: var(--slate-400); font-size: 13px; }
+
+  /* ── Login Screen ── */
+  #loginScreen {
+    position: fixed; inset: 0; z-index: 999;
+    background: var(--slate-50);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #loginScreen.hidden { display: none; }
+  .login-wrap {
+    display: flex;
+    width: 860px; max-width: 95vw;
+    min-height: 520px;
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid var(--slate-200);
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(30,64,175,.10);
+  }
+  .login-left {
+    width: 340px; flex-shrink: 0;
+    background: var(--blue-950);
+    padding: 44px 36px;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+  }
+  .login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+  .login-brand .logo-icon { width: 42px; height: 42px; border-radius: 11px; }
+  .login-brand .logo-text { font-size: 20px; font-weight: 700; color: #fff; }
+  .login-brand .logo-sub { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: .5px; }
+  .login-tagline { font-size: 22px; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 12px; }
+  .login-desc { font-size: 13px; color: rgba(255,255,255,.45); line-height: 1.6; }
+  .login-right {
+    flex: 1; padding: 44px 40px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .login-heading { font-size: 20px; font-weight: 700; color: var(--slate-900); margin-bottom: 6px; }
+  .login-sub { font-size: 13px; color: var(--slate-400); margin-bottom: 28px; }
+  .account-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .account-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px;
+    border: 1.5px solid var(--slate-200);
+    border-radius: var(--radius);
+    cursor: pointer; transition: all .15s;
+    user-select: none;
+  }
+  .account-card:hover { border-color: var(--blue-400); background: var(--blue-50); }
+  .account-card.selected { border-color: var(--blue-600); background: var(--blue-50); }
+  .account-card .avatar { width: 42px; height: 42px; font-size: 14px; flex-shrink: 0; }
+  .account-card-info { flex: 1; }
+  .account-card-name { font-size: 14px; font-weight: 700; color: var(--slate-800); }
+  .account-card-role { font-size: 12px; color: var(--slate-400); margin-top: 1px; }
+  .account-card-access { font-size: 11px; color: var(--blue-600); font-weight: 600; margin-top: 4px; }
+  .account-radio {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--slate-300);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .15s;
+  }
+  .account-card.selected .account-radio { border-color: var(--blue-600); }
+  .account-card.selected .account-radio::after {
+    content: ''; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--blue-600);
+  }
+  .login-btn {
+    width: 100%; padding: 12px;
+    background: var(--blue-600); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: background .15s;
+  }
+  .login-btn:hover { background: var(--blue-700); }
+  .login-btn:disabled { background: var(--slate-300); cursor: not-allowed; }
+  .logout-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    font-size: 12px; color: rgba(255,255,255,.4);
+    cursor: pointer; transition: all .15s; margin-top: 8px;
+    border: none; background: none; font-family: inherit; width: 100%;
+  }
+  .logout-btn:hover { color: rgba(255,255,255,.8); background: rgba(255,255,255,.06); }
+  .logout-btn svg { width: 14px; height: 14px; }
+  .role-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; letter-spacing: .3px;
+  }
+  .role-supervisor { background: var(--blue-100); color: var(--blue-700); }
+  .role-operator { background: var(--green-100); color: var(--green-700); }
+  .nav-item.locked { opacity: .35; cursor: not-allowed; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-left">
+      <div>
+        <div class="login-brand">
+          <div class="logo-icon" style="background:var(--blue-500);display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:11px">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:#fff"><path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.18L19 8.5v7L12 19.32 5 15.5v-7L12 4.18z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <div>
+            <div class="login-brand" style="font-size:20px;font-weight:700;color:#fff;margin:0">Inspectra</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.5px">QC SYSTEM &middot; PT IEI</div>
+          </div>
+        </div>
+        <div class="login-tagline">Sistem Verifikasi Kuantitas Part Otomatis</div>
+        <div class="login-desc">Pilih akun untuk melanjutkan. Setiap role memiliki akses yang berbeda sesuai tanggung jawabnya.</div>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.2);line-height:1.7">
+        Prototype &mdash; Capstone A4 Kelompok 2<br>
+        Universitas Brawijaya &middot; 2026
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="login-heading">Pilih Akun</div>
+      <div class="login-sub">Ini adalah prototype dengan dua akun dummy</div>
+      <div class="account-cards">
+        <div class="account-card" id="cardSupervisor" onclick="selectAccount('supervisor')">
+          <div class="avatar" style="background:var(--blue-600)">SR</div>
+          <div class="account-card-info">
+            <div class="account-card-name">Selena Rafi</div>
+            <div class="account-card-role">Supervisor QC</div>
+            <div class="account-card-access">Akses: Dashboard &middot; Inspection &middot; Report</div>
+          </div>
+          <div class="account-radio" id="radioSupervisor"></div>
+        </div>
+        <div class="account-card" id="cardOperator" onclick="selectAccount('operator')">
+          <div class="avatar" style="background:var(--green-600)">BW</div>
+          <div class="account-card-info">
+            <div class="account-card-name">Budi Wicaksono</div>
+            <div class="account-card-role">Operator QC</div>
+            <div class="account-card-access">Akses: Dashboard &middot; Inspection</div>
+          </div>
+          <div class="account-radio" id="radioOperator"></div>
+        </div>
+      </div>
+      <button class="login-btn" id="loginBtn" disabled onclick="doLogin()">Masuk ke Dashboard</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.18L19 8.5v7L12 19.32 5 15.5v-7L12 4.18z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Inspectra</div>
+      <div class="logo-sub">QC SYSTEM · PT IEI</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('inspection', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
+      Inspection
+    </div>
+    <div class="nav-section-label" style="margin-top:16px">Analytics</div>
+    <div class="nav-item" id="navReport" onclick="showPage('report', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+      Report
+    </div>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="user-chip">
+      <div class="avatar" id="sidebarAvatar">SR</div>
+      <div>
+        <div class="user-name" id="sidebarName">Selena Rafi</div>
+        <div class="user-role" id="sidebarRole">Supervisor QC</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- ════ PAGE: DASHBOARD ════ -->
+  <div class="page active" id="page-dashboard">
+    <div class="topbar">
+      <div>
+        <span class="topbar-title">Dashboard</span>
+        <span class="topbar-sub">Senin, 14 April 2026</span>
+        <span class="role-badge role-supervisor" id="topbarRoleBadge">Supervisor QC</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn btn-primary" onclick="showPage('inspection', document.querySelectorAll('.nav-item')[1])">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Lihat Semua
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:28px">
+      <!-- Alert -->
+      <div class="alert-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>2 kemasan NOT OK</strong> terdeteksi dalam 30 menit terakhir — Part: SCREW-M2×4 dari Vendor Sakura Parts. Tindak lanjut diperlukan.</span>
+        <button class="btn btn-outline supervisor-only" style="padding:4px 12px;font-size:12px;margin-left:auto;display:none" onclick="showPage('report', document.querySelectorAll('.nav-item')[2])">Buat RPP</button>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--accent:var(--blue-500);--icon-bg:var(--blue-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div class="kpi-label">Total Inspeksi Hari Ini</div>
+          <div class="kpi-value">247</div>
+          <div class="kpi-badge badge-up">↑ 12% vs kemarin</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--green-500);--icon-bg:var(--green-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--green-600)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="kpi-label">Rate OK</div>
+          <div class="kpi-value">96.8%</div>
+          <div class="kpi-badge badge-up">↑ 1.2% vs kemarin</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--red-500);--icon-bg:var(--red-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red-600)"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div class="kpi-label">Total NOT OK</div>
+          <div class="kpi-value">8</div>
+          <div class="kpi-badge badge-down">↑ 3 vs kemarin</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--amber-500);--icon-bg:var(--amber-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--amber-600)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="kpi-label">Avg Waktu Proses</div>
+          <div class="kpi-value">2.1<span style="font-size:16px;font-weight:500;color:var(--slate-400)">s</span></div>
+          
+        </div>
+      </div>
+
+      <!-- Chart + Live Feed -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Tren Inspeksi Hari Ini</div>
+              <div class="card-sub">OK vs NOT OK per jam</div>
+            </div>
+            <select class="filter-select" style="font-size:12px">
+              <option>Hari ini</option>
+              <option>7 hari</option>
+              <option>30 hari</option>
+            </select>
+          </div>
+          <div class="card-body">
+            <canvas id="trendChart" height="200"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Live Inspection Feed</div>
+            <div class="live-badge"><div class="live-dot"></div>Real-time</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div class="feed-list" id="feedList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut + Part Distribution + Recent NG -->
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Komposisi Status</div>
+          </div>
+          <div class="card-body" style="text-align:center">
+            <div class="donut-wrap">
+              <canvas id="donutChart"></canvas>
+              <div class="donut-center">
+                <div class="donut-pct">96.8%</div>
+                <div class="donut-label">PASS RATE</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:center;gap:16px;margin-top:14px;font-size:12px">
+              <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:var(--green-500)"></div><span style="color:var(--slate-500)">OK (239)</span></div>
+              <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:var(--red-500)"></div><span style="color:var(--slate-500)">NOT OK (8)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Top Part Diinspeksi</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div id="partList"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">NOT OK Terbaru</div>
+            <span class="status-pill pill-ng">8 kasus</span>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div id="ngList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: INSPECTION ════ -->
+  <div class="page" id="page-inspection">
+    <div class="topbar">
+      <div>
+        <span class="topbar-title">Inspection</span>
+        <span class="topbar-sub">Riwayat Lengkap</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-outline" onclick="alert('Export PDF sedang diproses...')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Export PDF
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:28px">
+      <div class="card">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Cari part name, kode, vendor…" id="searchInput" oninput="filterTable()">
+          </div>
+          <select class="filter-select" id="filterStatus" onchange="filterTable()">
+            <option value="">Semua Status</option>
+            <option value="OK">OK</option>
+            <option value="NOT OK">NOT OK</option>
+          </select>
+          <select class="filter-select" id="filterVendor" onchange="filterTable()">
+            <option value="">Semua Vendor</option>
+            <option>Sakura Parts</option>
+            <option>Mitra Komponen</option>
+            <option>PT. Surya Mas</option>
+            <option>Global Parts ID</option>
+          </select>
+          <select class="filter-select" id="filterPart" onchange="filterTable()">
+            <option value="">Semua Part</option>
+            <option>SCREW-M2×4</option>
+            <option>GEAR-SP-14T</option>
+            <option>HOLDER-BRK</option>
+            <option>SCREW-M3×6</option>
+          </select>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Part Name</th>
+                <th>Part Code</th>
+                <th>Vendor</th>
+                <th>Qty Target</th>
+                <th>Qty Aktual</th>
+                <th>Berat (g)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="inspectionTbody"></tbody>
+          </table>
+        </div>
+
+        <div class="table-footer">
+          <span id="tableInfo">Menampilkan 1–20 dari 247 data</span>
+          <div class="pagination">
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">…</button>
+            <button class="page-btn">13</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: REPORT ════ -->
+  <div class="page" id="page-report">
+    <div class="topbar">
+      <div>
+        <span class="topbar-title">Report</span>
+        <span class="topbar-sub">Analytics &amp; RPP Generator</span>
+      </div>
+      <div class="topbar-actions">
+        <select class="filter-select">
+          <option>April 2026</option>
+          <option>Maret 2026</option>
+          <option>Februari 2026</option>
+        </select>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Report
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:28px">
+      <!-- Monthly KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--accent:var(--blue-500);--icon-bg:var(--blue-50)">
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div class="kpi-label">Total Inspeksi Bulan Ini</div>
+          <div class="kpi-value">5,284</div>
+          <div class="kpi-badge badge-up">↑ 8% vs Maret</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--green-500);--icon-bg:var(--green-50)">
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--green-600)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="kpi-label">Avg Defect Rate</div>
+          <div class="kpi-value">3.2%</div>
+          <div class="kpi-badge badge-up">↓ 0.8% vs Maret</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--amber-500);--icon-bg:var(--amber-50)">
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--amber-600)"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg></div>
+          <div class="kpi-label">Total RPP Dikirim</div>
+          <div class="kpi-value">14</div>
+          <div class="kpi-badge badge-down">5 masih open</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--red-500);--icon-bg:var(--red-50)">
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red-600)"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div class="kpi-label">Discrepancy Rate</div>
+          <div class="kpi-value">2.9%</div>
+          <div class="kpi-badge badge-down">↑ 0.3% vs target</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid-2-eq">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Tren Defect Rate — April 2026</div>
+              <div class="card-sub">Persentase NOT OK per hari</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="defectTrendChart" height="180"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Defect per Kategori</div>
+              <div class="card-sub">Penyebab utama NOT OK</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="categoryChart" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vendor + RPP -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Performa Vendor</div>
+            <div class="card-sub">Defect rate bulan ini</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div id="vendorList"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">RPP Generator</div>
+            <button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="document.getElementById('rppForm').style.display=document.getElementById('rppForm').style.display==='none'?'block':'none'">+ Buat RPP Baru</button>
+          </div>
+          <div class="card-body">
+            <div id="rppForm" style="display:none;margin-bottom:16px;padding:14px;background:var(--slate-50);border-radius:var(--radius-sm);border:1px solid var(--slate-200)">
+              <div class="form-group">
+                <label class="form-label">Part Code</label>
+                <input class="form-input" type="text" placeholder="cth: SCREW-M2×4" id="rppPart">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group">
+                  <label class="form-label">Vendor</label>
+                  <select class="form-input" id="rppVendor">
+                    <option>Sakura Parts</option>
+                    <option>Mitra Komponen</option>
+                    <option>PT. Surya Mas</option>
+                    <option>Global Parts ID</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Jumlah Selisih</label>
+                  <input class="form-input" type="number" placeholder="pcs" id="rppQty">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tipe Discrepancy</label>
+                <select class="form-input" id="rppType">
+                  <option>Shortage (kurang)</option>
+                  <option>Overage (lebih)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Keterangan</label>
+                <textarea class="form-input" rows="2" placeholder="Deskripsi singkat masalah…" id="rppNote"></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="submitRPP()" style="width:100%">Submit RPP</button>
+            </div>
+
+            <table class="rpp-table">
+              <thead>
+                <tr>
+                  <th style="text-align:left;font-size:11px;color:var(--slate-400);padding:8px 0;font-weight:700;letter-spacing:.5px;border-bottom:1px solid var(--slate-200)">RPP ID</th>
+                  <th style="text-align:left;font-size:11px;color:var(--slate-400);padding:8px;font-weight:700;letter-spacing:.5px;border-bottom:1px solid var(--slate-200)">Part / Vendor</th>
+                  <th style="text-align:left;font-size:11px;color:var(--slate-400);padding:8px;font-weight:700;letter-spacing:.5px;border-bottom:1px solid var(--slate-200)">Selisih</th>
+                  <th style="text-align:left;font-size:11px;color:var(--slate-400);padding:8px;font-weight:700;letter-spacing:.5px;border-bottom:1px solid var(--slate-200)">Status</th>
+                </tr>
+              </thead>
+              <tbody id="rppTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="card-title" id="modalTitle">Detail Inspeksi</div>
+        <div class="card-sub" id="modalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════
+// DATA
+// ══════════════════════════════
+const vendors = ['Sakura Parts','Mitra Komponen','PT. Surya Mas','Global Parts ID'];
+const partNames = ['SCREW-M2×4','GEAR-SP-14T','HOLDER-BRK','SCREW-M3×6'];
+const partCodes = ['SCR-M2X4-001','GR-SP14T-002','HLD-BRK-003','SCR-M3X6-004'];
+const shifts = ['Pagi','Siang','Malam'];
+
+function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function fmt(d){ return d.toTimeString().slice(0,8); }
+
+function genData(n=60){
+  const rows=[];
+  const base = new Date(); base.setHours(7,0,0,0);
+  for(let i=0;i<n;i++){
+    const pi = rnd(0,3);
+    const target = [20,50,10,30][pi];
+    const ok = Math.random() > 0.032;
+    const actual = ok ? target : target + (Math.random()<.5 ? -rnd(1,3) : rnd(1,2));
+    const weight_per = [0.8,2.1,4.5,1.2][pi];
+    const ts = new Date(base.getTime() + i*180000);
+    rows.push({
+      id: `INS-${String(i+1).padStart(4,'0')}`,
+      ts: ts,
+      tsStr: ts.toTimeString().slice(0,8),
+      part: partNames[pi],
+      code: partCodes[pi],
+      vendor: vendors[rnd(0,3)],
+      target,
+      actual,
+      weight: parseFloat((actual * weight_per + rnd(0,3)*0.1).toFixed(1)),
+      status: ok ? 'OK' : 'NOT OK',
+      cvQty: ok ? target : actual + rnd(-1,1),
+      loadQty: actual,
+      procTime: (Math.random()*1.5+1.2).toFixed(2),
+      shift: 'Pagi'
+    });
+  }
+  return rows.reverse();
+}
+
+const allData = genData(247);
+const displayData = allData.slice(0,60);
+
+const rppData = [
+  {id:'RPP-2604-001',part:'SCREW-M2×4',vendor:'Sakura Parts',selisih:'-3 pcs',status:'open'},
+  {id:'RPP-2604-002',part:'GEAR-SP-14T',vendor:'Mitra Komponen',selisih:'-1 pcs',status:'confirmed'},
+  {id:'RPP-2603-001',part:'HOLDER-BRK',vendor:'PT. Surya Mas',selisih:'+2 pcs',status:'closed'},
+  {id:'RPP-2603-002',part:'SCREW-M3×6',vendor:'Global Parts ID',selisih:'-5 pcs',status:'closed'},
+];
+
+const vendorData = [
+  {name:'Mitra Komponen',total:1240,ng:18,rate:1.5},
+  {name:'PT. Surya Mas',total:980,ng:22,rate:2.2},
+  {name:'Global Parts ID',total:1560,ng:51,rate:3.3},
+  {name:'Sakura Parts',total:1504,ng:79,rate:5.3},
+];
+
+const partTop = [
+  {name:'SCREW-M2×4',count:94,pct:38},
+  {name:'GEAR-SP-14T',count:71,pct:29},
+  {name:'HOLDER-BRK',count:48,pct:19},
+  {name:'SCREW-M3×6',count:34,pct:14},
+];
+
+// ══════════════════════════════
+// NAVIGATION
+// ══════════════════════════════
+function showPage(id, el){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+}
+
+// ══════════════════════════════
+// FEED
+// ══════════════════════════════
+const feedEl = document.getElementById('feedList');
+function renderFeed(){
+  const items = displayData.slice(0,8);
+  feedEl.innerHTML = items.map(r=>`
+    <div class="feed-item" onclick="openModal('${r.id}')">
+      <div class="feed-status ${r.status==='OK'?'ok':'ng'}"></div>
+      <div class="feed-info">
+        <div class="feed-part">${r.part}</div>
+        <div class="feed-meta">${r.vendor} · ${r.tsStr}</div>
+      </div>
+      <span class="status-pill ${r.status==='OK'?'pill-ok':'pill-ng'}">${r.status}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════
+// TABLE
+// ══════════════════════════════
+function renderTable(data){
+  const tbody = document.getElementById('inspectionTbody');
+  if(!data.length){ tbody.innerHTML='<tr><td colspan="8"><div class="empty">Tidak ada data ditemukan</div></td></tr>'; return; }
+  tbody.innerHTML = data.slice(0,20).map(r=>`
+    <tr onclick="openModal('${r.id}')">
+      <td class="mono">${r.tsStr}</td>
+      <td style="font-weight:600">${r.part}</td>
+      <td class="mono">${r.code}</td>
+      <td>${r.vendor}</td>
+      <td style="text-align:center">${r.target}</td>
+      <td style="text-align:center;font-weight:600;color:${r.actual===r.target?'var(--green-600)':'var(--red-600)'}">${r.actual}</td>
+      <td class="mono">${r.weight}g</td>
+      <td><span class="status-pill ${r.status==='OK'?'pill-ok':'pill-ng'}">${r.status}</span></td>
+    </tr>`).join('');
+  document.getElementById('tableInfo').textContent = `Menampilkan 1–${Math.min(20,data.length)} dari ${data.length} data`;
+}
+
+function filterTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const s = document.getElementById('filterStatus').value;
+  const v = document.getElementById('filterVendor').value;
+  const p = document.getElementById('filterPart').value;
+  const filtered = allData.filter(r=>{
+    return (!q || r.part.toLowerCase().includes(q) || r.code.toLowerCase().includes(q) || r.vendor.toLowerCase().includes(q))
+      && (!s || r.status===s)
+      && (!v || r.vendor===v)
+      && (!p || r.part===p);
+  });
+  renderTable(filtered);
+}
+
+// ══════════════════════════════
+// VENDOR LIST
+// ══════════════════════════════
+function renderVendors(){
+  const el = document.getElementById('vendorList');
+  el.innerHTML = vendorData.sort((a,b)=>a.rate-b.rate).map((v,i)=>{
+    const color = v.rate<2?'var(--green-500)':v.rate<4?'var(--amber-500)':'var(--red-500)';
+    return `<div class="vendor-row">
+      <div class="vendor-rank">#${i+1}</div>
+      <div class="vendor-info">
+        <div class="vendor-name">${v.name}</div>
+        <div class="vendor-meta">${v.total} inspeksi · ${v.ng} NOT OK</div>
+      </div>
+      <div class="vendor-bar-wrap">
+        <div class="vendor-bar"><div class="vendor-bar-fill" style="width:${Math.min(v.rate/6*100,100)}%;background:${color}"></div></div>
+      </div>
+      <div class="vendor-rate" style="color:${color}">${v.rate}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════
+// PART TOP
+// ══════════════════════════════
+function renderPartList(){
+  const el = document.getElementById('partList');
+  el.innerHTML = partTop.map(p=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:13px;font-weight:600;color:var(--slate-700)">${p.name}</span>
+        <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--slate-500)">${p.count} pcs</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill ok" style="width:${p.pct}%"></div></div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════
+// NG LIST
+// ══════════════════════════════
+function renderNGList(){
+  const el = document.getElementById('ngList');
+  const ngs = allData.filter(r=>r.status==='NOT OK').slice(0,5);
+  el.innerHTML = ngs.map(r=>`
+    <div class="feed-item" onclick="openModal('${r.id}')" style="cursor:pointer">
+      <div class="feed-status ng"></div>
+      <div class="feed-info">
+        <div class="feed-part">${r.part}</div>
+        <div class="feed-meta">${r.vendor} · Target ${r.target} → Aktual ${r.actual}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════
+// RPP
+// ══════════════════════════════
+function renderRPP(){
+  const tbody = document.getElementById('rppTbody');
+  tbody.innerHTML = rppData.map(r=>`
+    <tr>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;padding:10px 0;color:var(--slate-600)">${r.id}</td>
+      <td style="padding:10px 8px">
+        <div style="font-size:13px;font-weight:600;color:var(--slate-800)">${r.part}</div>
+        <div style="font-size:11px;color:var(--slate-400)">${r.vendor}</div>
+      </td>
+      <td style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;padding:10px 8px;color:${r.selisih.startsWith('-')?'var(--red-600)':'var(--amber-600)'}">${r.selisih}</td>
+      <td style="padding:10px 8px"><span class="rpp-status ${r.status==='open'?'rpp-open':r.status==='confirmed'?'rpp-confirmed':'rpp-closed'}">${r.status}</span></td>
+    </tr>`).join('');
+}
+
+function submitRPP(){
+  const part = document.getElementById('rppPart').value || 'N/A';
+  const vendor = document.getElementById('rppVendor').value;
+  const qty = document.getElementById('rppQty').value || '?';
+  const type = document.getElementById('rppType').value;
+  const sign = type.includes('kurang') ? '-' : '+';
+  const newRPP = {
+    id: `RPP-2604-${String(rppData.length+1).padStart(3,'0')}`,
+    part, vendor,
+    selisih: `${sign}${qty} pcs`,
+    status: 'open'
+  };
+  rppData.unshift(newRPP);
+  renderRPP();
+  document.getElementById('rppForm').style.display='none';
+  document.getElementById('rppPart').value='';
+  document.getElementById('rppQty').value='';
+  alert('RPP berhasil dibuat dan dikirimkan ke vendor!');
+}
+
+// ══════════════════════════════
+// MODAL
+// ══════════════════════════════
+function openModal(id){
+  const r = allData.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('modalTitle').textContent = `Detail — ${r.part}`;
+  document.getElementById('modalSub').textContent = `${r.id} · ${r.tsStr}`;
+  const accuracy = Math.abs(r.actual - r.target) === 0 ? 100 : Math.max(0, 100 - Math.abs(r.actual-r.target)/r.target*100);
+  document.getElementById('modalBody').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Part Code</div><div class="detail-value" style="font-family:'DM Mono',monospace;font-size:13px">${r.code}</div></div>
+      <div class="detail-item"><div class="detail-label">Vendor</div><div class="detail-value">${r.vendor}</div></div>
+      <div class="detail-item"><div class="detail-label">Qty Target</div><div class="detail-value">${r.target} pcs</div></div>
+      <div class="detail-item"><div class="detail-label">Qty Aktual</div><div class="detail-value" style="color:${r.status==='OK'?'var(--green-600)':'var(--red-600)'}">${r.actual} pcs ${r.status==='OK'?'✓':'⚠'}</div></div>
+      <div class="detail-item"><div class="detail-label">Berat Aktual</div><div class="detail-value" style="font-family:'DM Mono',monospace">${r.weight}g</div></div>
+      <div class="detail-item"><div class="detail-label">Waktu Proses</div><div class="detail-value" style="font-family:'DM Mono',monospace">${r.procTime}s</div></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <span class="status-pill ${r.status==='OK'?'pill-ok':'pill-ng'}" style="font-size:13px;padding:6px 16px">STATUS: ${r.status}</span>
+    </div>
+    <div class="sensor-bar">
+      <div class="sensor-title">Hasil Computer Vision (Kamera AI)</div>
+      <div class="sensor-row">
+        <span class="sensor-label">Qty estimasi visual</span>
+        <span class="sensor-val">${r.cvQty} pcs</span>
+      </div>
+      <div class="sensor-row">
+        <span class="sensor-label">Akurasi model</span>
+        <span class="sensor-val">${(accuracy).toFixed(1)}%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill ${accuracy>=95?'ok':'ng'}" style="width:${accuracy}%"></div></div>
+    </div>
+    <div class="sensor-bar">
+      <div class="sensor-title">Hasil Load Cell (Sensor Berat)</div>
+      <div class="sensor-row">
+        <span class="sensor-label">Qty estimasi massa</span>
+        <span class="sensor-val">${r.loadQty} pcs</span>
+      </div>
+      <div class="sensor-row">
+        <span class="sensor-label">Berat terukur</span>
+        <span class="sensor-val">${r.weight}g</span>
+      </div>
+      <div class="sensor-row">
+        <span class="sensor-label">Toleransi</span>
+        <span class="sensor-val">± 1g ✓</span>
+      </div>
+    </div>
+    <div class="sensor-bar">
+      <div class="sensor-title">Sensor Fusion — Keputusan Akhir</div>
+      <div class="sensor-row">
+        <span class="sensor-label">Hasil CV</span>
+        <span class="sensor-val">${r.cvQty} pcs</span>
+      </div>
+      <div class="sensor-row">
+        <span class="sensor-label">Hasil Load Cell</span>
+        <span class="sensor-val">${r.loadQty} pcs</span>
+      </div>
+      <div class="sensor-row">
+        <span class="sensor-label">Target</span>
+        <span class="sensor-val">${r.target} pcs</span>
+      </div>
+      <div class="sensor-row" style="margin-top:8px;border-top:1px solid var(--slate-200);padding-top:8px">
+        <span class="sensor-label" style="font-weight:700">Keputusan</span>
+        <span class="sensor-val" style="color:${r.status==='OK'?'var(--green-600)':'var(--red-600)'};font-size:15px">${r.status}</span>
+      </div>
+    </div>
+    ${r.status==='NOT OK'?`<button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="closeModal();showPage('report',document.querySelectorAll('.nav-item')[2])">Buat RPP untuk Kasus Ini</button>`:''}
+  `;
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeModal(){ document.getElementById('detailModal').classList.remove('open'); }
+
+// ══════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════
+function exportCSV(){
+  const rows = [['ID','Timestamp','Part Name','Part Code','Vendor','Qty Target','Qty Aktual','Berat (g)','Status']];
+  allData.slice(0,20).forEach(r=>rows.push([r.id,r.tsStr,r.part,r.code,r.vendor,r.target,r.actual,r.weight,r.status]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'inspectra-export.csv';
+  a.click();
+}
+
+// ══════════════════════════════
+// CHARTS
+// ══════════════════════════════
+const chartDefaults = {
+  font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+  color: '#94A3B8'
+};
+Chart.defaults.font = chartDefaults.font;
+Chart.defaults.color = chartDefaults.color;
+
+function initCharts(){
+  // Trend chart
+  const labels = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00'];
+  const okData = [28,35,42,38,44,51,32,29];
+  const ngData = [1,0,2,1,0,2,1,1];
+  new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'OK',data:okData,borderColor:'#22C55E',backgroundColor:'rgba(34,197,94,.08)',tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#22C55E'},
+        {label:'NOT OK',data:ngData,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,.08)',tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#EF4444'}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:16,font:{size:12}}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:11}}},
+        y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:11}},beginAtZero:true}
+      }
+    }
+  });
+
+  // Donut chart
+  new Chart(document.getElementById('donutChart'),{
+    type:'doughnut',
+    data:{
+      labels:['OK','NOT OK'],
+      datasets:[{data:[239,8],backgroundColor:['#22C55E','#EF4444'],borderWidth:0,hoverOffset:4}]
+    },
+    options:{
+      responsive:true,cutout:'72%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}}}
+    }
+  });
+
+  // Defect trend (report)
+  const days = Array.from({length:14},(_,i)=>`${i+1} Apr`);
+  const defRates = [3.8,2.9,4.1,3.2,2.7,3.9,3.0,2.8,4.5,3.1,2.6,3.4,2.9,3.2];
+  new Chart(document.getElementById('defectTrendChart'),{
+    type:'bar',
+    data:{
+      labels:days,
+      datasets:[{
+        label:'Defect Rate (%)',data:defRates,
+        backgroundColor:defRates.map(v=>v>4?'rgba(239,68,68,.7)':v>3?'rgba(245,158,11,.7)':'rgba(34,197,94,.7)'),
+        borderRadius:4, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:11},callback:v=>v+'%'},beginAtZero:true}
+      }
+    }
+  });
+
+  // Category pie
+  new Chart(document.getElementById('categoryChart'),{
+    type:'bar',
+    data:{
+      labels:['Kuantitas kurang','Kuantitas lebih','Berat tidak sesuai','Part asing'],
+      datasets:[{
+        label:'Kasus',data:[89,34,28,18],
+        backgroundColor:['rgba(239,68,68,.7)','rgba(245,158,11,.7)','rgba(59,130,246,.7)','rgba(139,92,246,.7)'],
+        borderRadius:4, borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:11}},beginAtZero:true},
+        y:{grid:{display:false},ticks:{font:{size:11}}}
+      }
+    }
+  });
+}
+
+
+
+// ══════════════════════════════
+// AUTH & ROLE
+// ══════════════════════════════
+const ACCOUNTS = {
+  supervisor: {
+    name: 'Selena Rafi',
+    role: 'Supervisor QC',
+    initials: 'SR',
+    avatarBg: 'var(--blue-600)',
+    access: ['dashboard','inspection','report'],
+    badgeClass: 'role-supervisor',
+    badgeLabel: 'Supervisor QC'
+  },
+  operator: {
+    name: 'Budi Wicaksono',
+    role: 'Operator QC',
+    initials: 'BW',
+    avatarBg: 'var(--green-600)',
+    access: ['dashboard','inspection'],
+    badgeClass: 'role-operator',
+    badgeLabel: 'Operator QC'
+  }
+};
+
+let selectedAccount = null;
+let currentUser = null;
+
+function selectAccount(type) {
+  selectedAccount = type;
+  document.querySelectorAll('.account-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card' + type.charAt(0).toUpperCase() + type.slice(1)).classList.add('selected');
+  document.getElementById('loginBtn').disabled = false;
+}
+
+function doLogin() {
+  if (!selectedAccount) return;
+  currentUser = ACCOUNTS[selectedAccount];
+
+  // Update sidebar
+  document.getElementById('sidebarAvatar').textContent = currentUser.initials;
+  document.getElementById('sidebarAvatar').style.background = currentUser.avatarBg;
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarRole').textContent = currentUser.role;
+
+  // Update topbar badge
+  const badge = document.getElementById('topbarRoleBadge');
+  badge.className = 'role-badge ' + currentUser.badgeClass;
+  badge.textContent = currentUser.badgeLabel;
+
+  // Lock/unlock Report nav
+  const navReport = document.getElementById('navReport');
+  if (!currentUser.access.includes('report')) {
+    navReport.classList.add('locked');
+    navReport.title = 'Akses terbatas — Supervisor QC only';
+  } else {
+    navReport.classList.remove('locked');
+    navReport.title = '';
+  }
+
+  // Show/hide supervisor-only elements
+  document.querySelectorAll('.supervisor-only').forEach(el => {
+    el.style.display = currentUser.access.includes('report') ? '' : 'none';
+  });
+
+  // If operator tries to view report page, redirect to dashboard
+  const origShowPage = window._origShowPage || showPage;
+  window._origShowPage = origShowPage;
+
+  // Hide login, show app
+  document.getElementById('loginScreen').classList.add('hidden');
+
+  // Go to dashboard
+  showPage('dashboard', document.querySelector('.nav-item.active') || document.querySelectorAll('.nav-item')[0]);
+
+  // Init charts after login (canvas must be visible)
+  initCharts();
+}
+
+function doLogout() {
+  selectedAccount = null;
+  currentUser = null;
+  document.querySelectorAll('.account-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('loginBtn').disabled = true;
+  document.getElementById('loginScreen').classList.remove('hidden');
+  // Destroy charts so they can be re-init on next login
+  Chart.getChart('trendChart') && Chart.getChart('trendChart').destroy();
+  Chart.getChart('donutChart') && Chart.getChart('donutChart').destroy();
+  Chart.getChart('defectTrendChart') && Chart.getChart('defectTrendChart').destroy();
+  Chart.getChart('categoryChart') && Chart.getChart('categoryChart').destroy();
+}
+
+// Guard showPage for role-based access
+const _origShowPage = showPage;
+window.showPage = function(id, el) {
+  if (currentUser && !currentUser.access.includes(id)) {
+    // Show a subtle message, don't navigate
+    const nav = document.getElementById('navReport');
+    nav.style.animation = 'none';
+    nav.style.opacity = '.2';
+    setTimeout(() => { nav.style.opacity = ''; }, 600);
+    return;
+  }
+  _origShowPage(id, el);
+};
+
+// ══════════════════════════════
+// INIT (no charts yet — wait for login)
+// ══════════════════════════════
+renderFeed();
+renderTable(allData);
+renderVendors();
+renderPartList();
+renderNGList();
+renderRPP();
+</script>
+</body>
+</html>

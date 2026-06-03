@@ -1,0 +1,25 @@
+{
+  "name": "inspectra-qc",
+  "version": "1.0.0",
+  "description": "Inspectra QC Dashboard — Supabase + Vercel",
+  "scripts": {
+    "dev": "vercel dev",
+    "seed": "node scripts/seed-supabase.js",
+    "simulate": "node scripts/hardware-simulator.js",
+    "simulate:fast": "node scripts/hardware-simulator.js --fast",
+    "simulate:burst": "node scripts/hardware-simulator.js --burst 20",
+    "test": "node test-api.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.107.0",
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "ws": "^8.21.0"
+  }
+}

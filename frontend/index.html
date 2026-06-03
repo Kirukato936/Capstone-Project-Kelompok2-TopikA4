@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspectra — Smart QC Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-left">
+      <div>
+        <div class="login-brand">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.18L19 8.5v7L12 19.32 5 15.5v-7L12 4.18z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <div>
+            <div class="login-brand" style="font-size:20px;font-weight:700;color:#fff;margin:0">Inspectra</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.5px">QC SYSTEM &middot; PT IEI</div>
+          </div>
+        </div>
+        <div class="login-tagline">Sistem Verifikasi Kuantitas Part Otomatis</div>
+        <div class="login-desc">Pilih akun untuk melanjutkan. Setiap role memiliki akses yang berbeda sesuai tanggung jawabnya.</div>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.2);line-height:1.7">
+        Prototype &mdash; Capstone A4 Kelompok 2<br>
+        Universitas Brawijaya &middot; 2026
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="login-heading">Pilih Akun</div>
+      <div class="login-sub">Ini adalah prototype dengan dua akun dummy terhubung ke backend API</div>
+      <div class="account-cards">
+        <div class="account-card" id="cardSupervisor" onclick="selectAccount('supervisor')">
+          <div class="avatar" style="background:var(--blue-600)">SR</div>
+          <div class="account-card-info">
+            <div class="account-card-name">Selena Rafi</div>
+            <div class="account-card-role">Supervisor QC</div>
+            <div class="account-card-access">Akses: Dashboard &middot; Inspection &middot; Report</div>
+          </div>
+          <div class="account-radio" id="radioSupervisor"></div>
+        </div>
+        <div class="account-card" id="cardOperator" onclick="selectAccount('operator')">
+          <div class="avatar" style="background:var(--green-600)">BW</div>
+          <div class="account-card-info">
+            <div class="account-card-name">Budi Wicaksono</div>
+            <div class="account-card-role">Operator QC</div>
+            <div class="account-card-access">Akses: Dashboard &middot; Inspection</div>
+          </div>
+          <div class="account-radio" id="radioOperator"></div>
+        </div>
+      </div>
+      
+      <div id="passwordArea" style="margin-bottom: 24px; display: none;">
+        <label class="form-label" style="margin-bottom: 8px;">Masukkan Password untuk <span id="selectedRoleName"></span></label>
+        <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" style="padding: 12px; background: #fff; border: 1.5px solid var(--slate-200);">
+        <div id="loginError" style="color: var(--red-600); font-size: 12px; margin-top: 8px; display: none;">Password salah, silakan coba lagi.</div>
+      </div>
+
+      <button class="login-btn" id="loginBtn" disabled onclick="doLogin()">Masuk ke Dashboard</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.18L19 8.5v7L12 19.32 5 15.5v-7L12 4.18z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Inspectra</div>
+      <div class="logo-sub">QC SYSTEM · PT IEI</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('inspection', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
+      Inspection
+    </div>
+    <div class="nav-section-label" style="margin-top:16px">Analytics</div>
+    <div class="nav-item" id="navReport" onclick="showPage('report', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+      Report
+    </div>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="user-chip">
+      <div class="avatar" id="sidebarAvatar">SR</div>
+      <div>
+        <div class="user-name" id="sidebarName">Selena Rafi</div>
+        <div class="user-role" id="sidebarRole">Supervisor QC</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- ════ PAGE: DASHBOARD ════ -->
+  <div class="page active" id="page-dashboard">
+    <div class="topbar">
+      <div>
+        <span class="topbar-title">Dashboard</span>
+        <span class="topbar-sub" id="topbarDate">Senin, 14 April 2026</span>
+        <span class="role-badge role-supervisor" id="topbarRoleBadge">Supervisor QC</span>
+      </div>
+      <div class="topbar-actions">
+        <div id="hwStatusBadge" class="live-badge" style="background:var(--slate-100);color:var(--slate-400);border:1px solid var(--slate-200)">
+          <div class="live-dot" style="background:var(--slate-300);animation:none"></div>
+          Hardware: Offline
+        </div>
+        <button class="btn btn-outline" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:28px">
+      <!-- Alert -->
+      <div class="alert-bar" id="alertBar" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="alertText"></span>
+        <button class="btn btn-outline supervisor-only" style="padding:4px 12px;font-size:12px;margin-left:auto;display:none" onclick="showPage('report', document.querySelectorAll('.nav-item')[2])">Buat RPP</button>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--accent:var(--blue-500);--icon-bg:var(--blue-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div class="kpi-label">Total Inspeksi Hari Ini</div>
+          <div class="kpi-value" id="kpiTotal">—</div>
+          <div class="kpi-badge badge-up" id="kpiBadgeTotal">loading...</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--green-500);--icon-bg:var(--green-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--green-600)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="kpi-label">Rate OK</div>
+          <div class="kpi-value" id="kpiOkRate">—</div>
+          <div class="kpi-badge badge-up" id="kpiBadgeOk">loading...</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--red-500);--icon-bg:var(--red-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red-600)"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div class="kpi-label">Total NOT OK</div>
+          <div class="kpi-value" id="kpiNG">—</div>
+          <div class="kpi-badge badge-down" id="kpiBadgeNG">loading...</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--amber-500);--icon-bg:var(--amber-50)">
+          <div class="kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--amber-600)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="kpi-label">Avg Waktu Proses</div>
+          <div class="kpi-value" id="kpiAvgTime">—</div>
+        </div>
+      </div>
+
+      <!-- Chart + Live Feed -->
+      <div class="grid-2">
+        <!-- Camera Feed -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Camera Feed — AI Vision</div>
+              <div class="card-sub">Frame langsung dari kamera inspeksi</div>
+            </div>
+            <div id="cameraStatusBadge" class="live-badge" style="background:var(--slate-100);color:var(--slate-400);border:1px solid var(--slate-200)">
+              <div class="live-dot" style="background:var(--slate-300);animation:none"></div>
+              Menunggu feed…
+            </div>
+          </div>
+          <div class="card-body" style="padding:16px">
+            <div class="camera-panel" id="cameraPanel">
+              <!-- Scan line animation (always visible) -->
+              <div class="camera-scan-line"></div>
+              <!-- Placeholder (shown when no frame) -->
+              <div class="camera-placeholder" id="cameraPlaceholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M15 10l4.553-2.276A1 1 0 0121 8.72v6.56a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                </svg>
+                <div>Menunggu feed kamera dari Jetson…</div>
+                <div style="font-size:10px;opacity:.6">POST /api/camera/frame</div>
+              </div>
+              <!-- Actual image (hidden until frame arrives) -->
+              <img id="cameraFeedImg" class="camera-feed-img" style="display:none" alt="Camera Feed">
+              <!-- Overlay badges -->
+              <div class="camera-overlay-badge" id="cameraLiveBadge" style="display:none">
+                <div class="live-dot"></div> LIVE
+              </div>
+              <div class="camera-ts" id="cameraTimestamp" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weight Monitor -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Weight Monitor — Load Cell</div>
+              <div class="card-sub">Pembacaan berat inspeksi terakhir</div>
+            </div>
+            <div id="weightTimestamp" style="font-size:11px;color:var(--slate-400);font-family:'DM Mono',monospace">—</div>
+          </div>
+          <div class="card-body" style="padding:20px">
+            <div class="weight-monitor">
+              <!-- Big reading -->
+              <div style="text-align:center">
+                <div class="weight-reading">
+                  <span class="weight-value-big" id="weightValueBig">—</span>
+                  <span class="weight-unit">g</span>
+                </div>
+                <div style="margin-top:10px">
+                  <span class="weight-status-badge weight-idle" id="weightStatusBadge">Menunggu data…</span>
+                </div>
+              </div>
+              <!-- Bar progress -->
+              <div class="weight-bar-section">
+                <div class="weight-bar-labels">
+                  <span>0 g</span>
+                  <span id="weightBarLabel">Target: —</span>
+                  <span id="weightBarMax">—</span>
+                </div>
+                <div class="weight-bar-track">
+                  <div class="weight-bar-fill" id="weightBarFill" style="width:0%"></div>
+                </div>
+                <div class="weight-meta-row">
+                  <span><span class="weight-stable-dot" id="weightStableDot"></span><span id="weightStableText">Belum ada data</span></span>
+                  <span id="weightDeltaText" style="font-family:'DM Mono',monospace;font-size:11px"></span>
+                </div>
+              </div>
+              <!-- Sensor detail cells -->
+              <div class="weight-sensor-info">
+                <div class="weight-sensor-cell">
+                  <div class="weight-sensor-cell-label">Berat Terukur</div>
+                  <div class="weight-sensor-cell-val" id="weightCellRaw">—</div>
+                </div>
+                <div class="weight-sensor-cell">
+                  <div class="weight-sensor-cell-label">Qty Estimasi</div>
+                  <div class="weight-sensor-cell-val" id="weightCellQty">—</div>
+                </div>
+                <div class="weight-sensor-cell">
+                  <div class="weight-sensor-cell-label">Target Berat</div>
+                  <div class="weight-sensor-cell-val" id="weightCellTarget">—</div>
+                </div>
+                <div class="weight-sensor-cell">
+                  <div class="weight-sensor-cell-label">Part Terakhir</div>
+                  <div class="weight-sensor-cell-val" id="weightCellPart" style="font-size:11px">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trend Chart + Live Feed -->
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Tren Inspeksi Hari Ini</div>
+              <div class="card-sub">OK vs NOT OK per jam</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="trendChart" height="200"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Live Inspection Feed</div>
+            <div class="live-badge"><div class="live-dot"></div>Real-time</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div class="feed-list" id="feedList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut + Part Distribution + Recent NG -->
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Komposisi Status</div>
+          </div>
+          <div class="card-body" style="text-align:center">
+            <div class="donut-wrap">
+              <canvas id="donutChart"></canvas>
+              <div class="donut-center">
+                <div class="donut-pct" id="donutPct">—</div>
+                <div class="donut-label">PASS RATE</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:center;gap:16px;margin-top:14px;font-size:12px">
+              <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:var(--green-500)"></div><span style="color:var(--slate-500)" id="donutOkCount">OK (—)</span></div>
+              <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:var(--red-500)"></div><span style="color:var(--slate-500)" id="donutNgCount">NOT OK (—)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Top Part Diinspeksi</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div id="partList"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">NOT OK Terbaru</div>
+          </div>
+          <div class="card-body" style="padding:12px 16px">
+            <div id="ngList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: INSPECTION ════ -->
+  <div class="page" id="page-inspection">
+    <div class="topbar">
+      <div>
+        <span class="topbar-title">Inspection</span>
+        <span class="topbar-sub">Riwayat Lengkap</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:28px">
+      <div class="card">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Cari part name, kode, vendor…" id="searchInput" oninput="filterTable()">
+          </div>
+          <select class="filter-select" id="filterStatus" onchange="filterTable()">
+            <option value="">Semua Status</option>
+            <option value="OK">OK</option>
+            <option value="NOT OK">NOT OK</option>
+          </select>
+          <select class="filter-select" id="filterVendor" onchange="filterTable()">
+            <option value="">Semua Vendor</option>
+            <option>Sakura Parts</option>
+            <option>Mitra Komponen</option>
+            <option>PT. Surya Mas</option>
+            <option>Global Parts ID</option>
+          </select>
+          <select class="filter-select" id="filterPart" onchange="filterTable()">
+            <option value="">Semua Part</option>
+            <option>SCREW-M2×4</option>
+            <option>GEAR-SP-14T</option>
+            <option>HOLDER-BRK</option>
+            <option>SCREW-M3×6</option>
+          </select>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Part Name</th>
+                <th>Part Code</th>
+                <th>Vendor</th>
+                <th>Qty Target</th>
+                <th>Qty Aktual</th>
+                <th>Berat (g)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="inspectionTbody"></tbody>
+          </table>
+        </div>
+
+        <div class="table-footer">
+          <span id="tableInfo">Memuat data...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: REPORT ════ -->
+  <div class="page" id="page-report">
+    <div class="topbar">
+      <div>
+        <span class="topbar-title">Report</span>
+        <span class="topbar-sub">Analytics &amp; RPP Generator</span>
+      </div>
+    </div>
+
+    <div style="padding:28px">
+      <div class="kpi-grid">
+        <!-- (Simplified for prototype) -->
+      </div>
+
+      <div class="grid-2-eq">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Tren Defect Rate</div></div>
+          <div class="card-body"><canvas id="defectTrendChart" height="180"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Defect per Kategori</div></div>
+          <div class="card-body"><canvas id="categoryChart" height="180"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Performa Vendor</div></div>
+          <div class="card-body"><div id="vendorList"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">RPP Generator</div>
+            <button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="document.getElementById('rppForm').style.display=document.getElementById('rppForm').style.display==='none'?'block':'none'">+ Buat RPP</button>
+          </div>
+          <div class="card-body">
+            <div id="rppForm" style="display:none;margin-bottom:16px;padding:14px;background:var(--slate-50);border-radius:var(--radius-sm);border:1px solid var(--slate-200)">
+              <div class="form-group">
+                <label class="form-label">Part Code</label>
+                <input class="form-input" type="text" placeholder="cth: SCREW-M2×4" id="rppPart">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group">
+                  <label class="form-label">Vendor</label>
+                  <select class="form-input" id="rppVendor">
+                    <option>Sakura Parts</option>
+                    <option>Mitra Komponen</option>
+                    <option>PT. Surya Mas</option>
+                    <option>Global Parts ID</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Jumlah Selisih</label>
+                  <input class="form-input" type="number" placeholder="pcs" id="rppQty">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tipe Discrepancy</label>
+                <select class="form-input" id="rppType">
+                  <option>Shortage (kurang)</option>
+                  <option>Overage (lebih)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="submitRPP()" style="width:100%">Submit RPP</button>
+            </div>
+
+            <table class="rpp-table">
+              <thead>
+                <tr>
+                  <th>RPP ID</th>
+                  <th>Part / Vendor</th>
+                  <th>Selisih</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="rppTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="card-title" id="modalTitle">Detail Inspeksi</div>
+        <div class="card-sub" id="modalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="js/api-client.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

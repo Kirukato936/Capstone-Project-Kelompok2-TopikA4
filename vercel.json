@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    { "source": "/api/stats/trend",              "destination": "/api/stats?type=trend" },
+    { "source": "/api/stats/defect-trend",        "destination": "/api/stats?type=defect-trend" },
+    { "source": "/api/stats/defect-categories",   "destination": "/api/stats?type=defect-categories" },
+    { "source": "/api/logs/summary",              "destination": "/api/logs?type=summary" },
+    { "source": "/api/hardware/data",             "destination": "/api/hardware" },
+    { "source": "/api/hardware/batch",            "destination": "/api/hardware?action=batch" },
+    { "source": "/api/camera/frame",              "destination": "/api/camera" },
+    { "source": "/api/sensor/weight",             "destination": "/api/sensor" },
+    { "source": "/api/parts/top",                 "destination": "/api/parts" },
+    { "source": "/((?!api/).*)",                  "destination": "/frontend/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
+    }
+  ]
+}
