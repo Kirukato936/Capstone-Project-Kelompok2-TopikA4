@@ -16,10 +16,11 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require("child_process");
+const dataService = require('./data-service');
+let latestWeight = 0;
 
 // Initialize database first (creates tables)
 const db = require('./db');
-const dataService = require('./data-service');
 const auditLogger = require('./audit-logger');
 
 const app = express();
@@ -332,6 +333,38 @@ app.post('/api/inspection/capture', async (req, res) => {
     const detection =
       await runYOLO(filepath);
 
+    const WEIGHT_PER_NUT = 0.8;
+
+    const loadQty =
+        Math.round(
+          latestWeight / WEIGHT_PER_NUT
+        );
+    
+    console.log(
+          '[SENSOR FUSION]',
+          {
+            cvQty: detection.count,
+            loadQty: loadQty,
+            weight: latestWeight
+          }
+        );
+
+    const inspection =
+      dataService.addHardwareData({
+      part: 'SCREW-M2×4',
+      actual: detection.count,
+      cvQty: detection.count,
+      loadQty: loadQty || 0,
+      weight: latestWeight || 0,
+      procTime: 0.5,
+      vendor: 'Sakura Parts'
+  });
+    
+    console.log(
+      '[INSPECTION]',
+      inspection
+    );
+
     console.log(
       "[YOLO]",
       detection
@@ -495,6 +528,22 @@ app.post('/api/hardware/batch', (req, res) => {
   }
 });
 
+app.post('/api/sensor/weight', (req, res) => {
+
+  latestWeight = req.body.weight;
+
+  console.log(
+    '[LOAD CELL]',
+    latestWeight,
+    'g'
+  );
+
+  res.json({
+    success: true
+  });
+
+});
+
 // ══════════════════════════════════════════
 // AUDIT TRAIL / LOGS ENDPOINT
 // ══════════════════════════════════════════
@@ -548,6 +597,14 @@ app.get('/api/status', (req, res) => {
     database: 'connected',
     uptime: process.uptime()
   });
+});
+
+app.get('/api/sensor/weight', (req, res) => {
+
+  res.json({
+    weight: latestWeight
+  });
+
 });
 
 // ══════════════════════════════════════════
