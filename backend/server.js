@@ -14,6 +14,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const fs = require('fs');
+const { spawn } = require("child_process");
 
 // Initialize database first (creates tables)
 const db = require('./db');
@@ -22,6 +24,46 @@ const auditLogger = require('./audit-logger');
 
 const app = express();
 const PORT = 3001;
+
+function runYOLO(imagePath) {
+  return new Promise((resolve, reject) => {
+
+    const py = spawn(
+      "python",
+      [
+        "detect.py",
+        imagePath
+      ],
+      {
+        cwd: __dirname
+      }
+    );
+
+    let output = "";
+
+    py.stdout.on("data", data => {
+      output += data.toString();
+    });
+
+    py.stderr.on("data", data => {
+      console.error("[YOLO]", data.toString());
+    });
+
+    py.on("close", () => {
+      try {
+
+        const lines = output.trim().split("\n");
+        const jsonLine = lines[lines.length - 1];
+
+        resolve(JSON.parse(jsonLine));
+
+      } catch(err) {
+        reject(err);
+      }
+    });
+
+  });
+}
 
 let lastHeartbeat = null;
 
@@ -243,6 +285,82 @@ app.get('/api/camera/frame', (req, res) => {
   }
   res.json(latestCameraFrame);
 });
+
+// ═══════════════════════════════════════
+// CAPTURE INSPECTION
+// Dashboard → Save captured image
+// ═══════════════════════════════════════
+
+app.post('/api/inspection/capture', async (req, res) => {
+
+  try {
+
+    const { image } = req.body;
+
+    if (!image) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image received'
+      });
+    }
+
+    const uploadsDir =
+      path.join(__dirname, 'uploads');
+
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir);
+    }
+
+    const filename =
+      `capture_${Date.now()}.jpg`;
+
+    const filepath =
+      path.join(uploadsDir, filename);
+
+    const base64Data =
+      image.replace(
+        /^data:image\/\w+;base64,/,
+        ''
+      );
+
+    fs.writeFileSync(
+      filepath,
+      base64Data,
+      'base64'
+    );
+
+    const detection =
+      await runYOLO(filepath);
+
+    console.log(
+      "[YOLO]",
+      detection
+    );
+
+    console.log(
+      '[Capture] Saved:',
+      filename
+    );
+
+    res.json({
+      success: true,
+      filename,
+      count: detection.count
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+
+  }
+
+});
+
 
 // ══════════════════════════════════════════
 // WEIGHT SENSOR ENDPOINTS

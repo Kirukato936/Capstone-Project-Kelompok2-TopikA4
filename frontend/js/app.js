@@ -374,6 +374,20 @@ window.doLogin = async function() {
     showPage('dashboard', document.querySelectorAll('.nav-item')[0]);
     initCharts();
     startPolling();
+    startPreviewCamera();
+    const captureBtn =
+  document.getElementById(
+    "captureBtn"
+  );
+
+if (captureBtn) {
+
+  captureBtn.addEventListener(
+    "click",
+    captureInspection
+  );
+
+}
 
   } catch (err) {
     loginError.style.display = 'block';
@@ -499,7 +513,7 @@ async function startPolling() {
   if (pollingTimer) return;
 
   // Start camera feed polling (independent, faster)
-  startCameraPolling();
+  // startCameraPolling();
 
   pollingTimer = setInterval(async () => {
     try {
@@ -542,3 +556,216 @@ function updateHardwareStatusUI(online) {
     badge.innerHTML = '<div class="live-dot" style="background:var(--slate-300);animation:none"></div> Hardware: Offline';
   }
 }
+
+// ══════════════════════════════
+// CAMERA PREVIEW
+// ══════════════════════════════
+
+let previewStream = null;
+
+async function startPreviewCamera() {
+
+  try {
+
+    previewStream =
+      await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false
+      });
+
+    const video =
+      document.getElementById(
+        "cameraPreview"
+      );
+
+    if (video) {
+      video.srcObject =
+        previewStream;
+    }
+
+    console.log(
+      "[Camera] Preview started"
+    );
+
+  }
+  catch (err) {
+
+    console.error(
+      "[Camera] Failed:",
+      err
+    );
+
+    alert(
+      "Webcam tidak dapat diakses"
+    );
+  }
+}
+
+async function captureInspection() {
+
+  const video =
+      document.getElementById(
+          "cameraPreview"
+      );
+
+  if (!video) return;
+
+  const canvas =
+      document.createElement(
+          "canvas"
+      );
+
+  canvas.width =
+      video.videoWidth;
+
+  canvas.height =
+      video.videoHeight;
+
+  const ctx =
+      canvas.getContext(
+          "2d"
+      );
+
+  ctx.drawImage(
+      video,
+      0,
+      0
+  );
+
+  const imageBase64 =
+      canvas.toDataURL(
+          "image/jpeg",
+          0.9
+      );
+
+  // tampilkan hasil capture
+  const img =
+      document.getElementById(
+          "capturedImage"
+      );
+
+  if (img) {
+      img.src = imageBase64;
+  }
+
+  alert(
+      "Foto berhasil diambil"
+  );
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const video = document.getElementById("cameraPreview");
+  const captureBtn = document.getElementById("captureBtn");
+  const capturedImage = document.getElementById("capturedImage");
+
+  if (!video || !captureBtn || !capturedImage) {
+      console.error("Camera elements tidak ditemukan");
+      return;
+  }
+
+  try {
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+          video: true
+      });
+
+      video.srcObject = stream;
+
+      console.log("[Camera] Preview started");
+
+  } catch (err) {
+
+      console.error(err);
+      alert("Kamera tidak bisa diakses");
+
+  }
+
+  captureBtn.addEventListener(
+    "click",
+    async () => {
+  
+      const canvas =
+        document.createElement("canvas");
+  
+      canvas.width =
+        video.videoWidth;
+  
+      canvas.height =
+        video.videoHeight;
+  
+      const ctx =
+        canvas.getContext("2d");
+  
+      ctx.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+  
+      const imageData =
+        canvas.toDataURL(
+          "image/jpeg"
+        );
+  
+      capturedImage.src =
+        imageData;
+  
+      try {
+  
+        const response =
+          await fetch(
+            "/api/inspection/capture",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+              body: JSON.stringify({
+                image: imageData
+              })
+            }
+          );
+
+
+  
+        const result =
+          await response.json();
+
+          document.getElementById(
+            "cvCount"
+          ).textContent =
+            result.count + " pcs";
+        
+          console.log(result);
+
+          alert(
+            `Jumlah mur terdeteksi: ${result.count}`
+          );
+          
+        console.log(
+          "[Capture Saved]",
+          result
+        );
+  
+        alert(
+          "Foto berhasil disimpan"
+        );
+  
+      } catch(err) {
+  
+        console.error(err);
+  
+        alert(
+          "Gagal menyimpan foto"
+        );
+  
+      }
+  
+    }
+  );
+
+});

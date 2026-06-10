@@ -16,6 +16,7 @@
   "type": "commonjs",
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
+    "better-sqlite3": "^12.10.0",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
