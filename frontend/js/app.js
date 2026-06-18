@@ -425,7 +425,7 @@ function renderWeightPanel() {
   const pct = Math.min((weight / maxBar) * 100, 100);
 
   // Determine status
-  const tolerance = targetWeight * 0.05; // 5% tolerance
+  const tolerance = targetWeight * 0.1; // 10% tolerance
   let statusClass = 'weight-ok';
   let statusLabel = '✓ Sesuai Target';
   let barClass = '';
@@ -715,6 +715,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   
       try {
   
+        const targetQty =
+          Number(
+            document.getElementById(
+              "targetQty"
+            ).value
+          );
+
         const response =
           await fetch(
             "/api/inspection/capture",
@@ -725,7 +732,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                   "application/json"
               },
               body: JSON.stringify({
-                image: imageData
+                image: imageData,
+                targetQty: targetQty
               })
             }
           );

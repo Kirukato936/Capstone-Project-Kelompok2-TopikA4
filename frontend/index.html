@@ -221,21 +221,39 @@
                         object-fit:cover;
                     "
                 ></video>
-        
-                <button
-                    id="captureBtn"
-                    class="btn btn-primary"
-                    style="
-                        position:absolute;
-                        bottom:20px;
-                        right:20px;
-                        z-index:10;
-                    "
-                >
-                    📸 Capture Inspection
-                </button>
-        
-            </div>
+                <div
+                  style="
+                    position:absolute;
+                    bottom:80px;
+                    right:20px;
+                    z-index:20;
+                    background:white;
+                    padding:10px;
+                    border-radius:8px;
+                  ">
+
+                <div style="position:absolute;bottom:20px;right:20px;z-index:20;display:flex;gap:10px">
+
+                  <select
+                      id="targetQty"
+                      style="
+                        padding:8px;
+                        border-radius:8px;
+                        border:1px solid #ccc;
+                      ">
+                      <option value="10">10 pcs</option>
+                      <option value="20" selected>20 pcs</option>
+                      <option value="30">30 pcs</option>
+                      <option value="50">50 pcs</option>
+                  </select>
+
+                  <button
+                      id="captureBtn"
+                      class="btn btn-primary">
+                      📸 Capture Inspection
+                  </button>
+
+                </div>
         
             <div style="margin-top:20px">
         

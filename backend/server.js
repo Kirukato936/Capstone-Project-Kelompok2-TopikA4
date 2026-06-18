@@ -296,7 +296,10 @@ app.post('/api/inspection/capture', async (req, res) => {
 
   try {
 
-    const { image } = req.body;
+    const {
+      image,
+      targetQty
+    } = req.body; 
 
     if (!image) {
       return res.status(400).json({
@@ -333,13 +336,20 @@ app.post('/api/inspection/capture', async (req, res) => {
     const detection =
       await runYOLO(filepath);
 
-    const WEIGHT_PER_NUT = 0.8;
+    const WEIGHT_PER_NUT = 2;
 
     const loadQty =
         Math.round(
           latestWeight / WEIGHT_PER_NUT
         );
     
+    console.log(
+      '[DEBUG]',
+      {
+      latestWeight,
+      loadQty
+      }
+    ); 
     console.log(
           '[SENSOR FUSION]',
           {
@@ -351,14 +361,19 @@ app.post('/api/inspection/capture', async (req, res) => {
 
     const inspection =
       dataService.addHardwareData({
-      part: 'SCREW-M2×4',
-      actual: detection.count,
-      cvQty: detection.count,
-      loadQty: loadQty || 0,
-      weight: latestWeight || 0,
-      procTime: 0.5,
-      vendor: 'Sakura Parts'
-  });
+        part: 'SCREW-M2×4',
+
+        target: targetQty,
+
+        actual: detection.count,
+        cvQty: detection.count,
+        loadQty: loadQty,
+
+        weight: latestWeight,
+
+        procTime: 0.5,
+        vendor: 'Sakura Parts'
+      });
     
     console.log(
       '[INSPECTION]',
@@ -378,8 +393,16 @@ app.post('/api/inspection/capture', async (req, res) => {
     res.json({
       success: true,
       filename,
-      count: detection.count
-    });
+
+      count:
+        detection.count,
+
+      weight:
+        latestWeight,
+
+      loadQty:
+        loadQty
+  });
 
   } catch (err) {
 
@@ -414,18 +437,53 @@ app.post('/api/inspection/capture', async (req, res) => {
  * }
  */
 app.post('/api/sensor/weight', (req, res) => {
-  const { weight, stable, timestamp } = req.body;
-  if (weight === undefined || typeof weight !== 'number') {
-    return res.status(400).json({ error: 'Invalid weight value. Expected a number.' });
+
+  const {
+    weight,
+    stable,
+    timestamp
+  } = req.body;
+
+  if (
+    weight === undefined ||
+    typeof weight !== 'number'
+  ) {
+    return res.status(400).json({
+      error:
+        'Invalid weight value. Expected a number.'
+    });
   }
+
+  latestWeight = weight;
+
   lastHeartbeat = new Date();
+
   latestWeightData = {
     weight,
-    stable: stable !== undefined ? stable : true,
-    timestamp: timestamp || new Date().toISOString(),
-    receivedAt: new Date().toISOString()
+    stable:
+      stable !== undefined
+        ? stable
+        : true,
+    timestamp:
+      timestamp ||
+      new Date().toISOString(),
+    receivedAt:
+      new Date().toISOString()
   };
-  res.status(200).json({ message: 'Weight data received', data: latestWeightData });
+
+  console.log(
+    '[LOADCELL]',
+    latestWeight,
+    'g'
+  );
+
+  res.status(200).json({
+    message:
+      'Weight data received',
+    data:
+      latestWeightData
+  });
+
 });
 
 /**

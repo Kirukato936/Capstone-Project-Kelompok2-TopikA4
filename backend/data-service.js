@@ -250,13 +250,45 @@ const dataService = {
     const tzoffset = now.getTimezoneOffset() * 60000; // offset in milliseconds
     const localISOTime = (new Date(now.getTime() - tzoffset)).toISOString().slice(0, 19).replace('T', ' ');
     const timestamp = localISOTime;
-
+    const CV_TOLERANCE = 2;
+    const target =
+      data.target ||
+      config.target;
+    const WEIGHT_TOLERANCE = 2.5;
+    const WEIGHT_PER_NUT = 2;
+    const targetWeight =
+      target * WEIGHT_PER_NUT;
     const actual = data.actual || 0;
-    const target = config.target;
-    const status = actual === target ? 'OK' : 'NOT OK';
-    const weight = data.weight || parseFloat((actual * config.weightPer).toFixed(1));
-    const cvQty = data.cvQty !== undefined ? data.cvQty : (status === 'OK' ? target : actual);
-    const loadQty = data.loadQty !== undefined ? data.loadQty : actual;
+    
+
+    const cvQty =
+      data.cvQty !== undefined
+        ? data.cvQty
+        : actual;
+
+    const loadQty =
+      data.loadQty !== undefined
+        ? data.loadQty
+        : actual;
+
+    const weight =
+      data.weight || 0;
+
+    const cvPass =
+      Math.abs(
+        cvQty - target
+      ) <= CV_TOLERANCE;
+
+    const loadPass =
+      Math.abs(
+        weight - targetWeight
+      ) <= WEIGHT_TOLERANCE;
+    
+    const status =
+      (cvPass || loadPass)
+        ? 'OK'
+        : 'NOT OK';
+        
     const procTime = data.procTime ? parseFloat(data.procTime) : parseFloat((Math.random() * 1.5 + 1.2).toFixed(2));
     const vendor = data.vendor || VENDORS[Math.floor(Math.random() * VENDORS.length)];
     const shift = getCurrentShift();
